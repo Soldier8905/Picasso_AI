@@ -23,7 +23,12 @@ def generate(points, point_connections, fraction, draw, width, recersion):
     if recersion > 0:
         draw_connections(points, point_connections, draw, width)
         points = create_new_points(points, point_connections, fraction)
-        generate(points, point_connections, fraction, draw, 1, recersion - 1)
+        far_enough = False
+        for i in points[1::]:
+            if ((i[0]-points[0][0])**2+(i[1]-points[0][1])**2)**0.5 > 5:
+                far_enough = True
+        if far_enough:
+            generate(points, point_connections, fraction, draw, 1, recersion - 1)
 
 
 def main(size: tuple, fraction: float, recersion_limit: int):
@@ -35,7 +40,15 @@ def main(size: tuple, fraction: float, recersion_limit: int):
     points = [[0, 0], [size[0]-1, 0], [size[0]-1, size[1]-1], [0, size[1]-1]]
 
     for i in range(3):
-        points.append([random.randint(size[0]-size[0]*0.75,size[0]*0.75),random.randint(size[1]-size[1]*0.75,size[1]*0.75)])
+        while True:
+            point = [random.randint(size[0]-size[0]*0.75,size[0]*0.75),random.randint(size[1]-size[1]*0.75,size[1]*0.75)]
+            toclose = False
+            for i in points:
+                if ((i[0]-point[0])**2+(i[1]-point[1])**2)**0.5 < max(size)*0.2:
+                    toclose = True
+            if not toclose:
+                break
+        points.append(point)
 
     DT.addPoints(points)
 
@@ -47,4 +60,4 @@ def main(size: tuple, fraction: float, recersion_limit: int):
     img.show()
 
 
-main((400, 600), 0.1, 100)
+main((400, 600), 0.1, 10)
