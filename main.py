@@ -16,38 +16,51 @@ def create_new_points(points: list, point_connections: list, fraction: float) ->
 
 def draw_connections(point: list, point_connections: list, draw: ImageDraw.ImageDraw, width: int) -> None:
     for i in point_connections:
-        draw.line((tuple(point[i[0]]), tuple(point[i[1]])), width=width, fill=1)
+        draw.line((tuple(point[i[0]]), tuple(point[i[1]])), width=width, fill=(255,255,255))
 
 
-def generate(points, point_connections, fraction, draw, width, recersion):
+def generate(img_size: tuple[int,int], points: list, fraction: float, draw: ImageDraw.ImageDraw, width: int, recersion: int) -> None:
     if recersion > 0:
+        point_connections = [[x,(x+1)%len(points)] for x in range(len(points))]
         draw_connections(points, point_connections, draw, width)
         points = create_new_points(points, point_connections, fraction)
-        generate(points, point_connections, fraction, draw, 1, recersion - 1)
+        far_enough = False
+        for i in points[1::]:
+            if ((i[0]-points[0][0])**2+(i[1]-points[0][1])**2)**0.5 > 5:
+                far_enough = True
+        if far_enough:
+            generate(img_size, points, fraction, draw, width, recersion - 1)
 
 
 def main(size: tuple, fraction: float, recersion_limit: int):
-    img = Image.new("1", size, 0)
-    draw = ImageDraw.Draw(img)
+    r_size = (size[0]*10,size[1]*10)
+    img = Image.new("RGBA", r_size, (0,0,0))
+    draw = ImageDraw.Draw(img,)
 
     DT = Delaunay2D()
 
-    points = [[0, 0], [size[0]-1, 0], [size[0]-1, size[1]-1], [0, size[1]-1]]
+    points = [[0, 0], [r_size[0]-1, 0], [r_size[0]-1, r_size[1]-1], [0, r_size[1]-1]]
 
     for i in range(3):
-        points.append([random.randint(size[0]-size[0]*0.75,size[0]*0.75),random.randint(size[1]-size[1]*0.75,size[1]*0.75)])
+        while True:
+            point = [random.randint(r_size[0]-r_size[0]*0.75,r_size[0]*0.75),random.randint(r_size[1]-r_size[1]*0.75,r_size[1]*0.75)]
+            toclose = False
+            for i in points:
+                if ((i[0]-point[0])**2+(i[1]-point[1])**2)**0.5 < max(r_size)*0.2:
+                    toclose = True
+            if not toclose:
+                break
+        points.append(point)
 
     DT.addPoints(points)
 
     shapes = DT.exportDT()
 
     for shape in shapes:
-        generate(shape[0], shape[1], fraction, draw, 1, recersion_limit)
+        generate(r_size, shape, fraction, draw, 20, recersion_limit)
+
+    img.thumbnail(size,Image.Resampling.HAMMING)
 
     img.show()
 
-
-main((400, 600), 0.1, 100)
-
-
-#test
+main((400, 600), 0.1, 10)

@@ -1,1 +1,0 @@
-add randomly generated points so art created is unqiue
