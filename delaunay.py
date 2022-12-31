@@ -149,6 +149,52 @@ class Delaunay2D:
         coord = self.coords[4:]
         
         # Filter out triangles with any vertex in the extended BBox
-        tris = [([coord[a-4].tolist(), coord[b-4].tolist(), coord[c-4].tolist()],[[0,1],[1,2],[2,0]])
+        tris = [[coord[a-4].tolist(), coord[b-4].tolist(), coord[c-4].tolist()]
                 for (a, b, c) in self.triangles if a > 3 and b > 3 and c > 3]
         return tris
+
+    def exportVoronoiRegions(self):
+        """Export coordinates and regions of Voronoi diagram as indexed data.
+        """
+        # Remember to compute circumcircles if not done before
+        # for t in self.triangles:
+        #     self.circles[t] = self.circumcenter(t)
+        useVertex = {i: [] for i in range(len(self.coords))}
+        vor_coors = []
+        index = {}
+        # Build a list of coordinates and one index per triangle/region
+        for tidx, (a, b, c) in enumerate(sorted(self.triangles)):
+            vor_coors.append(self.circles[(a, b, c)][0].tolist())
+            # Insert triangle, rotating it so the key is the "last" vertex
+            useVertex[a] += [(b, c, a)]
+            useVertex[b] += [(c, a, b)]
+            useVertex[c] += [(a, b, c)]
+            # Set tidx as the index to use with this triangle
+            index[(a, b, c)] = tidx
+            index[(c, a, b)] = tidx
+            index[(b, c, a)] = tidx
+
+        # init regions per coordinate dictionary
+        regions = {}
+        # Sort each region in a coherent order, and substitude each triangle
+        # by its index
+        for i in range(4, len(self.coords)):
+            v = useVertex[i][0][0]  # Get a vertex of a triangle
+            r = []
+            for _ in range(len(useVertex[i])):
+                # Search the triangle beginning with vertex v
+                t = [t for t in useVertex[i] if t[0] == v][0]
+                r.append(index[t])  # Add the index of this triangle to region
+                v = t[1]            # Choose the next vertex to search
+            regions[i-4] = r        # Store region.
+
+            shapes = []
+
+            for i in regions.values():
+                shape = []
+                for j in i:
+                    shape.append(vor_coors[j])
+                shapes.append(shape)
+
+        return shapes
+
