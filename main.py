@@ -63,5 +63,4 @@ def main(size: tuple, fraction: float, recersion_limit: int):
 
     img.show()
 
-
 main((400, 600), 0.1, 10)
